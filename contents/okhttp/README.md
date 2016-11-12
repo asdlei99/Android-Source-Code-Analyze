@@ -1089,7 +1089,11 @@ public Response intercept(Chain chain) throws IOException {
 3. 返回response。
 
 
+##References
 
+* [拆 OkHttp](http://blog.piasy.com/2016/07/11/Understand-OkHttp/)
+* [OkHttp3.4.x源码剖析](http://www.jianshu.com/p/9bfdcc38d934)
+* [OkHttp3源码分析](http://www.jianshu.com/p/aad5aacd79bf)
 
 
 
