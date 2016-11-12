@@ -5,5 +5,6 @@
 
 | project        | Version	    | Article|
 | ------------- |:-------------:| -----:|
-| okio          | 1.11.0        | [从okio看io优化](https://github.com/AlfredTheBest/Android-Source-Code-Analyze/tree/master/contents/Okio)|
+| okio          | 1.11.0        | [从okio看io优化](https://github.com/AlfredTheBest/Android-Source-Code-Analyze/tree/master/contents/okio)|
+| okhttp |3.4.1| [从okhttp看http的逻辑](https://github.com/AlfredTheBest/Android-Source-Code-Analyze/tree/master/contents/okhttp)|
 
