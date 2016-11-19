@@ -7,4 +7,6 @@
 | ------------- |:-------------:| -----:|
 | okio          | 1.11.0        | [从okio看io优化](https://github.com/AlfredTheBest/Android-Source-Code-Analyze/tree/master/contents/okio)|
 | okhttp |3.4.1| [从okhttp看http的逻辑](https://github.com/AlfredTheBest/Android-Source-Code-Analyze/tree/master/contents/okhttp)|
+| retrofit |2.1.0|[从retrofit看漂亮的解耦](https://github.com/AlfredTheBest/Android-Source-Code-Analyze/tree/master/contents/retrofit) |
+
 
