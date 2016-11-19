@@ -25,7 +25,7 @@ Call<List<Repo>> repos = service.listRepos("octocat");
 ```
 
 ##Http框架
-![](./retrofit_00.png)
+![](./img/retrofit_00.png)
 
 在没用Http框架的时候，我们做一次请求需要:
 
@@ -630,30 +630,30 @@ public final class Github extends Proxy implements SimpleService.GitHub {
 ```
 
 ##设计思路
-![](./retrofit_01.png)
+![](./img/retrofit_01.png)
 
 简述下流程:
 
 * 将`callFactory`,`callbackExecutor`,`adapterFactory`,`converterFactory`加入 `retrofit `中。
-![](./retrofit_02.png)
+![](./img/retrofit_02.png)
 
 * 通过门面Retrofit来build一个 Service Interface的proxy。
-![](./retrofit_03.png)
+![](./img/retrofit_03.png)
 
 * 当你调用这个Service Interface中的某个请求方法，会被proxy拦截。
-![](./retrofit_04.png)
-![](./retrofit_05.png)
+![](./img/retrofit_04.png)
+![](./img/retrofit_05.png)
 
 
 * 通过`ServiceMethod`来解析invoke的那个方法 ，通过解析注解，传参，将它们封装成我们所熟悉的request。然后通过具体的返回值类型。
 
 * new一个OkHttpCall，这个OkHttpCall算是OkHttp的包装类，用它跟OkHttp对接，所有OkHttp需要的参数都可以看这个类。当然也还是可以扩展一个新的Call的，比如HttpUrlConnectionCall。
-![](./retrofit_06.png)
+![](./img/retrofit_06.png)
 
 * 生成的CallAdapter有四个工厂，分别对应不同的平台，RxJava, Java8, Guava还有一个Retrofit默认的。这个CallAdapter不太好用中文解释。简单来说就是用来将Call转成T的一个策略。因为这里具体请求是耗时操作，所以你需要CallAdapter去管理线程。怎么管理，继续往下看。
-![](./retrofit_07.png)
-![](./retrofit_08.png)
-![](./retrofit_09.png)
+![](./img/retrofit_07.png)
+![](./img/retrofit_08.png)
+![](./img/retrofit_09.png)
 ```
 //将callback简化
 ExecutorCallbackCall<> callAdapter.adapt(OkHttpCall<>)
@@ -665,16 +665,16 @@ ExecutorCallbackCall.enqueue(new Callback())
 	}
 )
 ```
-![](./retrofit_10.png)
+![](./img/retrofit_10.png)
 
 
 * 比如RxJava会根据调用方法的返回值，如Response<'T> |Result<'T>|Observable<'T> ，生成不同的CallAdapter。实际上就是对RxJava的回调方式做封装。比如将response再拆解为success和error等。它最大的优点可以指定方法在什么线程下执行
-![](./retrofit_11.png)
-![](./retrofit_12.png)
-![](./retrofit_13.png)
+![](./img/retrofit_11.png)
+![](./img/retrofit_12.png)
+![](./img/retrofit_13.png)
 
 * 在adapt Call中，具体的调用了Call execute()，execute()是同步的，enqueue()是异步的。因为RxJava已经切换了线程，所以这里用同步方法execute()。
-![](./retrofit_14.png)
+![](./img/retrofit_14.png)
 
 * 接下来的具体请求，就是OkHttp的事情了，retrofit要做成的就是等待返回值。在上面，我们说OkHttpCall是OkHttp的包装类，所以将OkHttp的response转换成我们要的T，也是在OkHttpCall中执行的。
 * 当然具体的解析转换操作也不是OkHttpCall来做的，因为它也不知道数据格式是什么样的。所以它只是将response包装成retrofit标准下的response。
