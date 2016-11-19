@@ -491,13 +491,143 @@ public final class Github extends Proxy implements SimpleService.GitHub {
       throw e;
     } 
   }
-
-  ....Object自带方法的代理...
 }
 ```
 
 ####动态代理的原理
 代理生成的过程使用了sun包中的闭源方法，反编译大致看了一下，先把接口通过native方法ProxyGenerator.generateProxyClass()根据Class文件的规范拼装生成了byte[]字节码，这个方法是在jvm（或者说art）的runtime中作为cpp编写的，详见[这里](https://android.googlesource.com/platform/art/+/master/runtime/native/java_lang_reflect_Proxy.cc)。接着用native方法defineClass0()转换为JVM中的Class结构体，最后通过class加载与连接，最后创建Class，然后通过class.newInstance进行对象的实例化。可以看出动态代理本质上是生成大量样板代码的过程。相比于静态代理，动态代理可以减少编写代理类（比如XXXImpl）的工作量。
+
+##建造者模式
+###动机
+生成器模式是一种对象构建模式。它可以将复杂对象的建造过程抽象出来（抽象类别），使这个抽象过程的不同实现方法可以构造出不同表现（属性）的对象。
+###
+建造者模式包含如下角色：
+
+* Builder：抽象建造者
+* ConcreteBuilder：具体建造者
+* Director：指挥者
+* Product：产品角色
+
+```
+	ConcreteBuilder * builder = new ConcreteBuilder();
+	Director  director;
+	director.setBuilder(builder);
+	Product * pd =  director.constuct();
+	pd->show();
+```
+细致可以看[建造者模式](https://github.com/AlfredTheBest/Design-Pattern/tree/master/lesson14)。
+
+###Retrofit使用的简单解耦
+
+```
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://gank.io/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .build();
+```
+
+```
+
+  Retrofit(okhttp3.Call.Factory callFactory, HttpUrl baseUrl,
+      List<Converter.Factory> converterFactories, List<CallAdapter.Factory> adapterFactories,
+      Executor callbackExecutor, boolean validateEagerly) {
+    this.callFactory = callFactory;
+    this.baseUrl = baseUrl;
+    this.converterFactories = unmodifiableList(converterFactories); // Defensive copy at call site.
+    this.adapterFactories = unmodifiableList(adapterFactories); // Defensive copy at call site.
+    this.callbackExecutor = callbackExecutor;
+    this.validateEagerly = validateEagerly;
+  }
+```
+
+
+```
+  public static final class Builder {
+    private Platform platform;
+    private okhttp3.Call.Factory callFactory;
+    private HttpUrl baseUrl;
+    private List<Converter.Factory> converterFactories = new ArrayList<>();
+    private List<CallAdapter.Factory> adapterFactories = new ArrayList<>();
+    private Executor callbackExecutor;
+    private boolean validateEagerly;
+
+    Builder(Platform platform) {
+      this.platform = platform;
+      converterFactories.add(new BuiltInConverters());
+    }
+
+    public Builder() {
+      this(Platform.get());
+    }
+
+    public Builder client(OkHttpClient client) {
+      return callFactory(checkNotNull(client, "client == null"));
+    }
+
+    public Builder callFactory(okhttp3.Call.Factory factory) {
+      this.callFactory = checkNotNull(factory, "factory == null");
+      return this;
+    }
+
+    public Builder baseUrl(String baseUrl) {
+      checkNotNull(baseUrl, "baseUrl == null");
+      HttpUrl httpUrl = HttpUrl.parse(baseUrl);
+      if (httpUrl == null) {
+        throw new IllegalArgumentException("Illegal URL: " + baseUrl);
+      }
+      return baseUrl(httpUrl);
+    }
+
+    public Builder baseUrl(HttpUrl baseUrl) {
+      checkNotNull(baseUrl, "baseUrl == null");
+      List<String> pathSegments = baseUrl.pathSegments();
+      if (!"".equals(pathSegments.get(pathSegments.size() - 1))) {
+        throw new IllegalArgumentException("baseUrl must end in /: " + baseUrl);
+      }
+      this.baseUrl = baseUrl;
+      return this;
+    }
+
+    public Builder addConverterFactory(Converter.Factory factory) {
+      converterFactories.add(checkNotNull(factory, "factory == null"));
+      return this;
+    }
+
+    public Builder callbackExecutor(Executor executor) {
+      this.callbackExecutor = checkNotNull(executor, "executor == null");
+      return this;
+    }
+
+    public Builder validateEagerly(boolean validateEagerly) {
+      this.validateEagerly = validateEagerly;
+      return this;
+    }
+
+    public Retrofit build() {
+      if (baseUrl == null) {
+        throw new IllegalStateException("Base URL required.");
+      }
+
+      okhttp3.Call.Factory callFactory = this.callFactory;
+      if (callFactory == null) {
+        callFactory = new OkHttpClient();
+      }
+
+      Executor callbackExecutor = this.callbackExecutor;
+      if (callbackExecutor == null) {
+        callbackExecutor = platform.defaultCallbackExecutor();
+      }
+
+      List<CallAdapter.Factory> adapterFactories = new ArrayList<>(this.adapterFactories);
+      adapterFactories.add(platform.defaultCallAdapterFactory(callbackExecutor));
+      List<Converter.Factory> converterFactories = new ArrayList<>(this.converterFactories);
+
+      return new Retrofit(callFactory, baseUrl, converterFactories, adapterFactories,
+          callbackExecutor, validateEagerly);
+    }
+  }
+```
 
 ##设计思路
 ![](./retrofit_01.png)
